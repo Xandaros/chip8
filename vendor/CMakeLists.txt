@@ -1,4 +1,2 @@
 add_subdirectory(SDL)
-
-add_library(vendor INTERFACE)
-target_link_libraries(vendor INTERFACE SDL3::SDL3)
+add_subdirectory(Catch2)

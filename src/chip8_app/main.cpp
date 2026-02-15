@@ -27,7 +27,7 @@ void open_file(void *userdata, const char * const *filelist, int filter) {
 void test(AppState *state) {
     uint8_t code[] = {
         0x00, 0xE0, // CLS
-        0x12, 0x02, // JMP 0x001
+        0x12, 0x02, // JP 0x001
     };
 
     state->cpu->load_code(code, sizeof(code));

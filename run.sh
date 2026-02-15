@@ -3,4 +3,9 @@
 mkdir -p build
 cmake -S . -B build
 cmake --build build
-build/debug/chip8
+
+if [ "$1" = "test" ]; then
+    build/debug/tests
+else
+    build/debug/chip8
+fi

@@ -38,6 +38,8 @@ class CPU {
         ~CPU();
         void load_code(uint8_t *code, int length);
         void step();
+        void push(uint8_t val);
+        uint8_t pop();
 
         static const uint16_t INITIAL_PC = 0x200;
         static const uint16_t FONT_OFFSET = 0;

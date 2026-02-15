@@ -4,6 +4,7 @@
 
 CPU::CPU() {
     this->pc = CPU::INITIAL_PC;
+    this->sp = 0;
 
     this->display = new Display();
 
@@ -12,6 +13,16 @@ CPU::CPU() {
 
 CPU::~CPU() {
     delete this->display;
+}
+
+void CPU::push(uint8_t val) {
+    this->memory[0x1FF - this->sp] = val;
+    this->sp += 1;
+}
+
+uint8_t CPU::pop() {
+    this->sp -= 1;
+    return this->memory[0x1FF - this->sp];
 }
 
 void CPU::load_code(uint8_t *code, int length) {
