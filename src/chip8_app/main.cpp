@@ -26,15 +26,32 @@ void open_file(void *userdata, const char * const *filelist, int filter) {
 
 void test(AppState *state) {
     uint8_t code[] = {
-        0x00, 0xE0, // CLS
-        0x12, 0x02, // JP 0x001
+        // Initialisation
+        0x60, 0x00, // LD V0, 0
+        0x61, 0x00, // LD V1, 0
+        0x62, 0x05, // LD V2, 5
+        0xA0, 0x00, // LD I, 0
+
+        // Loop over X
+        // loop: (8)
+        0xD0, 0x15, // DRW V0, V1, 5
+        0x70, 0x06, // ADD V0, 6
+        0xF2, 0x1E, // ADD I, V2
+        0x30, 48, // SE V0, 54
+        0x12, 0x08, // JP loop
+
+        // Loop over Y
+        0x60, 0x00, // LD V0, 0
+        0x71, 0x08, // ADD V1, 0x08
+        0x31, 0x10, // SE V1, 0x10
+        0x12, 0x08, // JP loop
+
+        // Halt
+        // end: (0x20)
+        0x12, 0x20, // JP end
     };
 
     state->cpu->load_code(code, sizeof(code));
-
-    for (int i = 0; i < 10; ++i) {
-        state->cpu->step();
-    }
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
@@ -77,17 +94,44 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         FIRST_RUN = false;
     }
 
+    state->cpu->step();
+
     SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
     SDL_RenderClear(state->renderer);
 
-    SDL_FRect rect = {.x = 20, .y = 20, .w = 200, .h = 200};
+    auto vram = state->cpu->display->vram;
 
-    SDL_SetRenderDrawColor(state->renderer, 255, 0, 0, 255);
-    SDL_RenderFillRect(state->renderer, &rect);
+    int window_w, window_h;
 
-    SDL_SetRenderScale(state->renderer, 4.0f, 4.0f);
-    SDL_RenderDebugText(state->renderer, 5.0f, 300.0f / 4.0f, "Test");
-    SDL_SetRenderScale(state->renderer, 1.0f, 1.0f);
+    if (!SDL_GetWindowSize(state->window, &window_w, &window_h)) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to get window size: %s", SDL_GetError());
+
+        return SDL_APP_FAILURE;
+    }
+
+    float pixel_w = (float)window_w / (float)Display::WIDTH;
+    float pixel_h = (float)window_h / (float)Display::HEIGHT;
+
+    for (int y = 0; y < Display::HEIGHT; ++y) {
+        for (int x = 0; x < Display::WIDTH; ++x) {
+            uint8_t pixel = vram[y * Display::WIDTH + x];
+
+            SDL_FRect rect = {
+                .x = x * pixel_w,
+                .y = y * pixel_h,
+                .w = pixel_w,
+                .h = pixel_h,
+            };
+
+            if (pixel != 0) {
+                SDL_SetRenderDrawColor(state->renderer, 255, 255, 255, 255);
+            } else {
+                SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
+            }
+
+            SDL_RenderFillRect(state->renderer, &rect);
+        }
+    }
 
     SDL_RenderPresent(state->renderer);
     return SDL_APP_CONTINUE;

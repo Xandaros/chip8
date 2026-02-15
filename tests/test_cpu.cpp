@@ -71,6 +71,70 @@ TEST_CASE("Call and return", "[cpu]") {
     REQUIRE(cpu.registers[0] == 0x35);
 }
 
+TEST_CASE("Add immediate", "[cpu]") {
+    CPU cpu = CPU();
+
+    uint8_t code[] = {
+        0x60, 0x00, // LD V0, 0x00
+        0x70, 0x12, // ADD V0, 0x12
+        0x70, 0x12, // ADD V0, 0x12
+    };
+
+    cpu.load_code(code, sizeof(code));
+    cpu.step();
+    CHECK(cpu.registers[0] == 0);
+    cpu.step();
+    CHECK(cpu.registers[0] == 0x12);
+    cpu.step();
+    REQUIRE(cpu.registers[0] == 0x24);
+}
+
+TEST_CASE("ADD I, Vx", "[cpu]") {
+    CPU cpu = CPU();
+
+    uint8_t code[] = {
+        0x60, 0x12, // LD V0, 0x12
+        0xA1, 0x23, // LD I, 0x123
+        0xF0, 0x1E, // ADD I, V0
+        0xF0, 0x1E, // ADD I, V0
+    };
+
+    cpu.load_code(code, sizeof(code));
+    cpu.step();
+    cpu.step();
+    CHECK(cpu.i == 0x123);
+    cpu.step();
+    CHECK(cpu.i == 0x135);
+    cpu.step();
+    REQUIRE(cpu.i == 0x147);
+}
+
+TEST_CASE("SE Vx, immediate", "[cpu]") {
+    CPU cpu = CPU();
+
+    uint8_t code[] = {
+        0x60, 0x00, // LD V0, 0x00
+        0x30, 0x00, // SE V0, 0x00
+        0x60, 0x12, // LD V0, 0x12 (skipped)
+        0x30, 0x12, // SE V0, 0x12
+        0x60, 0x12, // LD V0, 0x12 (not skipped)
+    };
+
+    cpu.load_code(code, sizeof(code));
+
+    step_cpu(&cpu, 2);
+    CHECK(cpu.pc == 0x206);
+    CHECK(cpu.registers[0] == 0);
+
+    cpu.step();
+    CHECK(cpu.pc == 0x208);
+    CHECK(cpu.registers[0] == 0);
+
+    cpu.step();
+    CHECK(cpu.pc == 0x20A);
+    CHECK(cpu.registers[0] == 0x12);
+}
+
 TEST_CASE("Sprite drawing", "[cpu][display]") {
     CPU cpu = CPU();
 
