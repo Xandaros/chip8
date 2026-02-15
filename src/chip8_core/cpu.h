@@ -7,11 +7,6 @@
 
 class CPU {
     private:
-        std::array<uint8_t, 4096> memory;
-        uint8_t registers[16];
-        uint16_t pc;
-        uint8_t sp;
-
         Display *display;
 
         static constexpr std::array<uint8_t, 80> FONT = {
@@ -34,6 +29,11 @@ class CPU {
         };
 
     public:
+        std::array<uint8_t, 4096> memory;
+        uint8_t registers[16];
+        uint16_t pc;
+        uint8_t sp;
+
         CPU();
         ~CPU();
         void load_code(uint8_t *code, int length);
