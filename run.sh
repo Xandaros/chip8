@@ -3,4 +3,4 @@
 mkdir -p build
 cmake -S . -B build
 cmake --build build
-build/chip8
+build/debug/chip8
