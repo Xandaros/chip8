@@ -70,3 +70,28 @@ TEST_CASE("Call and return", "[cpu]") {
     cpu.step();
     REQUIRE(cpu.registers[0] == 0x35);
 }
+
+TEST_CASE("Sprite drawing", "[cpu][display]") {
+    CPU cpu = CPU();
+
+    uint8_t code[] = {
+        0xA0, 0x00, // LD I, 0
+        0x60, 0x00, // LD V0, 0
+        0xD0, 0x05, // DRW V0, V0, 5
+    };
+
+    cpu.load_code(code, sizeof(code));
+    step_cpu(&cpu, 3);
+
+    for (int y = 0; y < 5; ++y) {
+        for (int x = 0; x < 8; ++x) {
+            uint8_t byte = CPU::FONT[y];
+            int idx = y * Display::WIDTH + x;
+
+            INFO("x: " << x);
+            INFO("y: " << y);
+            INFO("idx: " << idx);
+            CHECK(cpu.display->vram[idx] == ((byte >> (7 - x)) & 0x01));
+        }
+    }
+}

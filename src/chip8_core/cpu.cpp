@@ -61,10 +61,25 @@ void CPU::step() {
 
         return; // Prevent PC increment
     } else if ((instruction & 0xF000) == 0x6000) {
+        // LD Vx, yy - Load immediate to register
         uint8_t reg = (instruction & 0x0F00) >> 8;
         uint8_t value = instruction & 0x00FF;
 
         this->registers[reg] = value;
+    } else if ((instruction & 0xF000) == 0xA000) {
+        // LD I, nnn - Load immediate to I
+        uint16_t value = instruction & 0x0FFF;
+
+        this->i = value;
+    } else if ((instruction & 0xF000) == 0xD000) {
+        // DRW Vx, Vy, n - Draw n bytes of sprite at I to x, y
+        uint8_t x = instruction & 0x0F00;
+        uint8_t y = instruction & 0x00F0;
+        uint8_t n = instruction & 0x000F;
+        for (int i = 0; i < n; ++i) {
+            uint8_t data = this->memory[this->i + i];
+            this->display->draw_byte(x, (y + i) % Display::HEIGHT, data);
+        }
     }
 
     this->pc += 2;

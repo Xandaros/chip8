@@ -7,8 +7,8 @@
 
 class CPU {
     private:
-        Display *display;
 
+    public:
         static constexpr std::array<uint8_t, 80> FONT = {
             0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
             0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -28,11 +28,13 @@ class CPU {
             0xF0, 0x80, 0xF0, 0x80, 0x80, // F
         };
 
-    public:
+        Display *display;
+
         std::array<uint8_t, 4096> memory;
         uint8_t registers[16];
         uint16_t pc;
         uint8_t sp;
+        uint16_t i;
 
         CPU();
         ~CPU();
