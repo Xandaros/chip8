@@ -128,25 +128,25 @@ void CPU::step() {
 
         uint16_t result = this->registers[reg1] + this->registers[reg2];
 
+        this->registers[reg1] = result & 0xFF;
+
         if (result > 0xFF) {
             this->registers[15] = 1;
         } else {
             this->registers[15] = 0;
         }
-
-        this->registers[reg1] = result & 0xFF;
     } else if ((instruction & 0xF00F) == 0x8005) {
         // SUB Vx, Vy - Set Vx = Vx - Vy; Set Vf if Vx > Vy
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
         uint8_t reg2 = (instruction & 0x00F0) >> 4;
+
+        this->registers[reg1] = this->registers[reg1] - this->registers[reg2];
 
         if (this->registers[reg1] > this->registers[reg2]) {
             this->registers[15] = 1;
         } else {
             this->registers[15] = 0;
         }
-
-        this->registers[reg1] = this->registers[reg1] - this->registers[reg2];
     } else if ((instruction & 0xF00F) == 0x8006) {
         // SHR Vx{, Vy} - Set Vx = Vx >> 1; Set Vf to least significant bit of Vx
 
@@ -154,21 +154,21 @@ void CPU::step() {
         // The original set Vx = Vy before the shift
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
 
-        this->registers[15] = this->registers[reg1] & 0x01;
-
         this->registers[reg1] = this->registers[reg1] >> 1;
+
+        this->registers[15] = this->registers[reg1] & 0x01;
     } else if ((instruction & 0xF00F) == 0x8007) {
         // SUBN Vx, Vy - Set Vx = Vy - Vx; Set Vf if Vy > Vx
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
         uint8_t reg2 = (instruction & 0x00F0) >> 4;
+
+        this->registers[reg1] = this->registers[reg2] - this->registers[reg1];
 
         if (this->registers[reg2] > this->registers[reg1]) {
             this->registers[15] = 1;
         } else {
             this->registers[15] = 0;
         }
-
-        this->registers[reg1] = this->registers[reg2] - this->registers[reg1];
     } else if ((instruction & 0xF00F) == 0x800E) {
         // SHL Vx{, Vy} - Set Vx = Vx << 1; Set Vf to most significant bit of Vx
 
@@ -176,9 +176,9 @@ void CPU::step() {
         // The original set Vx = Vy before the shift
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
 
-        this->registers[15] = (this->registers[reg1] & 0x80) >> 7;
-
         this->registers[reg1] = this->registers[reg1] << 1;
+
+        this->registers[15] = (this->registers[reg1] & 0x80) >> 7;
     } else if ((instruction & 0xF00F) == 0x9000) {
         // SNE Vx, Vy - Skip next instruction if Vx != Vy
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
