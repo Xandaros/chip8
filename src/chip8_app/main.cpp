@@ -1,3 +1,9 @@
+#include <ctime>
+#include <fstream>
+#include <ios>
+#include <iosfwd>
+#include <iostream>
+
 #define SDL_MAIN_USE_CALLBACKS 1
 
 #include <SDL3/SDL.h>
@@ -9,19 +15,44 @@ struct AppState {
     SDL_Window *window;
     SDL_Renderer *renderer;
     CPU *cpu;
+    bool running;
 };
 
-void open_file(void *userdata, const char * const *filelist, int filter) {
+void open_file(void *appstate, const char * const *filelist, int filter) {
+    AppState *state = *(AppState **)appstate;
+
     if (filelist == NULL) {
+        // filelist being NULL indicates an error
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", SDL_GetError());
         return;
     }
 
-    const char * const *cur = filelist;
-    while (*cur != NULL) {
-        SDL_Log("%s", *cur);
-        cur++;
+    const char * const *file = filelist;
+    if (*file == NULL) {
+        // No file selected
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "No ROM selected.");
+        return;
     }
+
+    std::ifstream stream;
+    stream.open(*file, std::ios::in | std::ios::binary | std::ios::ate);
+
+    if (!stream.is_open()) {
+        return;
+    }
+
+    std::streampos size = stream.tellg();
+    char *buffer = new char[size];
+    stream.seekg(0, std::ios::beg);
+
+    stream.read(buffer, size);
+
+    state->cpu->load_code((uint8_t *)buffer, size);
+
+    stream.close();
+    delete[] buffer;
+
+    state->running = true;
 }
 
 void test(AppState *state) {
@@ -57,6 +88,7 @@ void test(AppState *state) {
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     AppState *state = new AppState();
     state->cpu = new CPU();
+    state->running = false;
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", SDL_GetError());
@@ -72,7 +104,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     *appstate = (void *)state;
 
-    // SDL_ShowOpenFileDialog(open_file, NULL, state->window, NULL, 0, NULL, true);
+    SDL_ShowOpenFileDialog(open_file, appstate, state->window, NULL, 0, NULL, false);
+
+
+    std::srand(std::time(NULL));
 
     return SDL_APP_CONTINUE;
 }
@@ -88,8 +123,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     AppState *state = (AppState *)appstate;
     static bool FIRST_RUN = true;
 
+    if (!state->running) {
+        return SDL_APP_CONTINUE;
+    }
+
     if (FIRST_RUN) {
-        test(state);
+        // test(state);
 
         FIRST_RUN = false;
     }

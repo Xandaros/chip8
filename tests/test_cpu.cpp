@@ -135,6 +135,80 @@ TEST_CASE("SE Vx, immediate", "[cpu]") {
     CHECK(cpu.registers[0] == 0x12);
 }
 
+TEST_CASE("SNE Vx, immediate", "[cpu]") {
+    CPU cpu = CPU();
+
+    uint8_t code[] = {
+        0x60, 0x00, // LD V0, 0x00
+        0x40, 0x12, // SE V0, 0x00
+        0x60, 0x12, // LD V0, 0x12 (skipped)
+        0x40, 0x00, // SE V0, 0x12
+        0x60, 0x12, // LD V0, 0x12 (not skipped)
+    };
+
+    cpu.load_code(code, sizeof(code));
+
+    step_cpu(&cpu, 2);
+    CHECK(cpu.pc == 0x206);
+    CHECK(cpu.registers[0] == 0);
+
+    cpu.step();
+    CHECK(cpu.pc == 0x208);
+    CHECK(cpu.registers[0] == 0);
+
+    cpu.step();
+    CHECK(cpu.pc == 0x20A);
+    CHECK(cpu.registers[0] == 0x12);
+}
+
+TEST_CASE("SE Vx, Vy", "[cpu]") {
+    CPU cpu = CPU();
+
+    uint8_t code[] = {
+        0x60, 0x00, // LD V0, 0x00
+        0x61, 0x00, // LD V1, 0x00
+        0x50, 0x10, // SE V0, V1
+        0x60, 0x12, // LD V0, 0x12 (skipped)
+        0x60, 0x13, // LD V0, 0x13
+        0x50, 0x10, // SE V0, V1
+        0x60, 0x12, // LD V0, 0x12 (not skipped)
+    };
+
+    cpu.load_code(code, sizeof(code));
+
+    step_cpu(&cpu, 3);
+    CHECK(cpu.pc == 0x208);
+    CHECK(cpu.registers[0] == 0);
+
+    cpu.step();
+    CHECK(cpu.pc == 0x20A);
+    CHECK(cpu.registers[0] == 0x13);
+
+    cpu.step();
+    CHECK(cpu.pc == 0x20C);
+    CHECK(cpu.registers[0] == 0x13);
+}
+
+TEST_CASE("LD B, Vx", "[cpu]") {
+    CPU cpu = CPU();
+
+    uint8_t code[] = {
+        0x60, 123, // LD V0, 123
+        0xA3, 0x00, // LD I, 0x300
+        0xF0, 0x33, // LD B, V0
+    };
+
+    cpu.load_code(code, sizeof(code));
+
+    step_cpu(&cpu, 3);
+
+    REQUIRE(cpu.i == 0x300);
+
+    CHECK(cpu.memory[0x300] == 1);
+    CHECK(cpu.memory[0x301] == 2);
+    REQUIRE(cpu.memory[0x302] == 3);
+}
+
 TEST_CASE("Sprite drawing", "[cpu][display]") {
     CPU cpu = CPU();
 
