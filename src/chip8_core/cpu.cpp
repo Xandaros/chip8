@@ -14,6 +14,17 @@ CPU::~CPU() {
     delete this->display;
 }
 
+void CPU::tick_timers() {
+    // Saturating subtraction
+    // Essentially: dt = dt.saturating_sub(1)
+    uint8_t current = this->dt.load(std::memory_order_relaxed);
+    while (current > 0 && !this->dt.compare_exchange_weak(current, current - 1, std::memory_order_relaxed));
+
+    // st = st.saturating_sub(1)
+    current = this->st.load(std::memory_order_relaxed);
+    while (current > 0 && !this->st.compare_exchange_weak(current, current - 1, std::memory_order_relaxed));
+}
+
 void CPU::set_key_down(uint8_t key, bool down) {
     this->keys[key & 0x0F] = down;
 
@@ -258,11 +269,26 @@ void CPU::step() {
         if (!this->is_key_down(this->registers[reg] & 0x0F)) {
             this->pc += 2;
         }
+    } else if ((instruction & 0xF0FF) == 0xF007) {
+        // LD Vx, DT - Store the value of DT in Vx
+        uint8_t reg = (instruction & 0x0F00) >> 8;
+
+        this->registers[reg] = this->dt;
     } else if ((instruction & 0xF0FF) == 0xF00A) {
         // LD Vx, K - Wait for a key press and store the pressed key in Vx
         uint8_t reg = (instruction & 0x0F00) >> 8;
 
         this->key_wait_register = reg;
+    } else if ((instruction & 0xF0FF) == 0xF015) {
+        // LD DT, Vx - Store the value of Vx in DT
+        uint8_t reg = (instruction & 0x0F00) >> 8;
+
+        this->dt = this->registers[reg];
+    } else if ((instruction & 0xF0FF) == 0xF018) {
+        // LD ST, Vx - Store the value of Vx in ST
+        uint8_t reg = (instruction & 0x0F00) >> 8;
+
+        this->st = this->registers[reg];
     } else if ((instruction & 0xF0FF) == 0xF01E) {
         // ADD I, Vx - Add Vx to I
         uint8_t reg = (instruction & 0x0F00) >> 8;

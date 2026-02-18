@@ -101,6 +101,19 @@ int cpu_thread(void *appstate) {
     return 0;
 }
 
+int timer_thread(void *appstate) {
+    AppState *state = (AppState *)appstate;
+
+    while (true) {
+        if (state->running) {
+            state->cpu->tick_timers();
+
+            // Timers should run at 60 Hz
+            SDL_Delay(1000 / 60);
+        }
+    }
+}
+
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     AppState *state = new AppState();
     state->cpu = new CPU();
@@ -126,6 +139,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     std::srand(std::time(NULL));
 
     SDL_CreateThread(cpu_thread, "CPU Thread", (void *)state);
+    SDL_CreateThread(timer_thread, "Timer Thread", (void *)state);
 
     return SDL_APP_CONTINUE;
 }

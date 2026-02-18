@@ -3,6 +3,7 @@
 #include "display.h"
 
 #include<array>
+#include <atomic>
 #include <stdint.h>
 
 class CPU {
@@ -38,6 +39,8 @@ class CPU {
         uint16_t pc;
         uint8_t sp;
         uint16_t i;
+        std::atomic<uint8_t> dt;
+        std::atomic<uint8_t> st;
 
         CPU();
         ~CPU();
@@ -45,6 +48,8 @@ class CPU {
         void step();
         void push(uint8_t val);
         uint8_t pop();
+
+        void tick_timers();
 
         void set_key_down(uint8_t key, bool down);
         bool is_key_down(uint8_t key);
