@@ -291,6 +291,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     AppState *state = (AppState *)appstate;
+    state->running = false;
     delete state->cpu;
     delete state;
 }
