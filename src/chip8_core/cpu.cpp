@@ -250,10 +250,16 @@ void CPU::step() {
         uint8_t x = this->registers[x_reg];
         uint8_t y = this->registers[y_reg];
 
+        bool flag = false;
+
         for (int i = 0; i < n; ++i) {
             uint8_t data = this->memory[this->i + i];
-            this->display->draw_byte(x, (y + i) % Display::HEIGHT, data);
+            if (this->display->draw_byte(x, (y + i) % Display::HEIGHT, data)) {
+                flag = true;
+            }
         }
+
+        this->registers[0xF] = flag ? 1 : 0;
     } else if ((instruction & 0xF0FF) == 0xE09E) {
         // SKP Vx - Skip next instruction if the key in Vx is pressed
         uint8_t reg = (instruction & 0x0F00) >> 8;

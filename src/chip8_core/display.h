@@ -16,5 +16,5 @@ class Display {
         std::array<uint8_t, 64 * 32> vram;
 
         void clear();
-        void draw_byte(int x, int y, uint8_t data);
+        bool draw_byte(int x, int y, uint8_t data);
 };
