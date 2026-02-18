@@ -18,7 +18,10 @@ struct AppState {
     SDL_Renderer *renderer;
     SDL_AudioStream *audio;
     CPU *cpu;
-    bool running;
+    SDL_Thread *cpu_thread;
+    SDL_Thread *timer_thread;
+    bool running = false;
+    bool exiting = false;
 };
 
 void open_file(void *appstate, const char * const *filelist, int filter) {
@@ -92,6 +95,9 @@ int cpu_thread(void *appstate) {
     AppState *state = (AppState *)appstate;
 
     while (true) {
+        if (state->exiting) {
+            break;
+        }
         if (state->running) {
             state->cpu->step();
 
@@ -106,6 +112,9 @@ int timer_thread(void *appstate) {
     AppState *state = (AppState *)appstate;
 
     while (true) {
+        if (state->exiting) {
+            break;
+        }
         if (state->running) {
             state->cpu->tick_timers();
 
@@ -113,12 +122,12 @@ int timer_thread(void *appstate) {
             SDL_Delay(1000 / 60);
         }
     }
+    return 0;
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     AppState *state = new AppState();
     state->cpu = new CPU();
-    state->running = false;
 
     std::srand(std::time(NULL));
 
@@ -157,8 +166,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     SDL_ShowOpenFileDialog(open_file, appstate, state->window, NULL, 0, NULL, false);
 
     // Create threads
-    SDL_CreateThread(cpu_thread, "CPU Thread", (void *)state);
-    SDL_CreateThread(timer_thread, "Timer Thread", (void *)state);
+    state->cpu_thread = SDL_CreateThread(cpu_thread, "CPU Thread", (void *)state);
+    state->timer_thread = SDL_CreateThread(timer_thread, "Timer Thread", (void *)state);
 
     return SDL_APP_CONTINUE;
 }
@@ -292,6 +301,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     AppState *state = (AppState *)appstate;
     state->running = false;
+    state->exiting = true;
+
+    SDL_WaitThread(state->cpu_thread, NULL);
+    SDL_WaitThread(state->timer_thread, NULL);
+
     delete state->cpu;
     delete state;
 }
