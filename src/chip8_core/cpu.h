@@ -7,6 +7,9 @@
 
 class CPU {
     private:
+        bool keys[16];
+        // Using 0xFF as a special "not waiting" value
+        uint8_t key_wait_register = 0xFF;
 
     public:
         static constexpr std::array<uint8_t, 80> FONT = {
@@ -42,6 +45,9 @@ class CPU {
         void step();
         void push(uint8_t val);
         uint8_t pop();
+
+        void set_key_down(uint8_t key, bool down);
+        bool is_key_down(uint8_t key);
 
         static const uint16_t INITIAL_PC = 0x200;
         static const uint16_t FONT_OFFSET = 0;

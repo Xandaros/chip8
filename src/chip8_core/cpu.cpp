@@ -14,6 +14,20 @@ CPU::~CPU() {
     delete this->display;
 }
 
+void CPU::set_key_down(uint8_t key, bool down) {
+    this->keys[key & 0x0F] = down;
+
+    if (!down && this->key_wait_register != 0xFF) {
+        // Register the key press on release
+        this->registers[this->key_wait_register & 0x0F] = key & 0x0F;
+        this->key_wait_register = 0xFF;
+    }
+}
+
+bool CPU::is_key_down(uint8_t key) {
+    return this->keys[key & 0x0F];
+}
+
 void CPU::push(uint8_t val) {
     this->memory[0x1FF - this->sp] = val;
     this->sp += 1;
@@ -29,6 +43,11 @@ void CPU::load_code(uint8_t *code, int length) {
 }
 
 void CPU::step() {
+    if (this->key_wait_register != 0xFF) {
+        // Currently waiting for a key press
+        return;
+    }
+
     uint16_t instruction = this->memory[this->pc] << 8;
     instruction |= this->memory[this->pc + 1];
 
@@ -224,6 +243,26 @@ void CPU::step() {
             uint8_t data = this->memory[this->i + i];
             this->display->draw_byte(x, (y + i) % Display::HEIGHT, data);
         }
+    } else if ((instruction & 0xF0FF) == 0xE09E) {
+        // SKP Vx - Skip next instruction if the key in Vx is pressed
+        uint8_t reg = (instruction & 0x0F00) >> 8;
+
+        uint8_t key = this->registers[reg] & 0x0F;
+        if (this->is_key_down(this->registers[reg] & 0x0F)) {
+            this->pc += 2;
+        }
+    } else if ((instruction & 0xF0FF) == 0xE0A1) {
+        // SKNP Vx - Skip next instruction if the key in Vx is NOT pressed
+        uint8_t reg = (instruction & 0x0F00) >> 8;
+
+        if (!this->is_key_down(this->registers[reg] & 0x0F)) {
+            this->pc += 2;
+        }
+    } else if ((instruction & 0xF0FF) == 0xF00A) {
+        // LD Vx, K - Wait for a key press and store the pressed key in Vx
+        uint8_t reg = (instruction & 0x0F00) >> 8;
+
+        this->key_wait_register = reg;
     } else if ((instruction & 0xF0FF) == 0xF01E) {
         // ADD I, Vx - Add Vx to I
         uint8_t reg = (instruction & 0x0F00) >> 8;

@@ -113,9 +113,33 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 }
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
+    AppState *state = (AppState *)appstate;
+
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
     }
+
+    if (event->type == SDL_EVENT_KEY_DOWN || event->type == SDL_EVENT_KEY_UP) {
+        if (event->key.repeat) {
+            // Ignore key repeats on held keys
+            return SDL_APP_CONTINUE;
+        }
+        SDL_Keycode keycode = event->key.key;
+
+        uint8_t key;
+
+        if (keycode >= '0' && keycode <= '9') {
+            key = keycode - '0';
+        } else if (keycode >= 'a' && keycode <= 'f') {
+            key = keycode - 'a' + 0xA;
+        } else {
+            // Unused key
+            return SDL_APP_CONTINUE;
+        }
+
+        state->cpu->set_key_down(key, event->key.down);
+    }
+
     return SDL_APP_CONTINUE;
 }
 
