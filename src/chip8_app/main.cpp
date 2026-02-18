@@ -16,6 +16,7 @@
 struct AppState {
     SDL_Window *window;
     SDL_Renderer *renderer;
+    SDL_AudioStream *audio;
     CPU *cpu;
     bool running;
 };
@@ -119,11 +120,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     state->cpu = new CPU();
     state->running = false;
 
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    std::srand(std::time(NULL));
+
+    // Initialise SDL
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "%s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
+    // Create window
     if (!SDL_CreateWindowAndRenderer("Chip8", 1024, 768, 0, &state->window, &state->renderer)) {
         SDL_LogCritical(SDL_LOG_CATEGORY_INPUT, "%s", SDL_GetError());
         return SDL_APP_FAILURE;
@@ -131,13 +136,27 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     SDL_SetRenderVSync(state->renderer, 1);
 
+    // Create audio stream
+    SDL_AudioSpec spec {
+        .format = SDL_AUDIO_F32,
+        .channels = 1,
+        .freq = 8000,
+    };
+    state->audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
+
+    if (!state->audio) {
+        SDL_LogCritical(SDL_LOG_CATEGORY_AUDIO, "Failed to create audio stream: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
+
+    SDL_SetAudioStreamGain(state->audio, 0.1);
+
+    // Show file dialogue
     *appstate = (void *)state;
 
     SDL_ShowOpenFileDialog(open_file, appstate, state->window, NULL, 0, NULL, false);
 
-
-    std::srand(std::time(NULL));
-
+    // Create threads
     SDL_CreateThread(cpu_thread, "CPU Thread", (void *)state);
     SDL_CreateThread(timer_thread, "Timer Thread", (void *)state);
 
@@ -215,9 +234,29 @@ SDL_AppResult draw_frame(AppState *state) {
     return SDL_APP_CONTINUE;
 }
 
+/// Generate audio samples for the beep function
+/// @param stream Audio stream for which to generate samples
+/// @param current_sample Index of the next sample to be generated
+void generate_audio(SDL_AudioStream *stream, int &current_sample) {
+    const int MINIMUM_SAMPLES = 4096;
+    if (SDL_GetAudioStreamQueued(stream) < MINIMUM_SAMPLES) {
+        float samples[MINIMUM_SAMPLES];
+
+        for (int i = 0; i < MINIMUM_SAMPLES; ++i) {
+            const int freq = 440;
+            const float phase = current_sample * freq / 8000.0f;
+            samples[i] = SDL_sinf(phase * 2 * SDL_PI_F);
+            current_sample = (current_sample + 1) % 8000;
+        }
+
+        SDL_PutAudioStreamData(stream, samples, MINIMUM_SAMPLES);
+    }
+}
+
 SDL_AppResult SDL_AppIterate(void *appstate) {
     AppState *state = (AppState *)appstate;
     static bool FIRST_RUN = true;
+    static int current_audio_sample = 0;
 
     if (!state->running) {
         return SDL_APP_CONTINUE;
@@ -227,6 +266,15 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         // test(state);
 
         FIRST_RUN = false;
+    }
+
+    generate_audio(state->audio, current_audio_sample);
+
+    // Play audio if ST > 0
+    if (state->cpu->st > 0) {
+        SDL_ResumeAudioStreamDevice(state->audio);
+    } else {
+        SDL_PauseAudioStreamDevice(state->audio);
     }
 
     SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
