@@ -136,13 +136,17 @@ void CPU::step() {
             this->registers[15] = 0;
         }
     } else if ((instruction & 0xF00F) == 0x8005) {
-        // SUB Vx, Vy - Set Vx = Vx - Vy; Set Vf if Vx > Vy
+        // SUB Vx, Vy - Set Vx = Vx - Vy; Set Vf if Vx >= Vy
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
         uint8_t reg2 = (instruction & 0x00F0) >> 4;
 
+        // Documentation seems to suggest Vx > Vy is correct
+        // However, Timendus' test suite tests for Vx >= Vy
+        uint8_t flag = this->registers[reg1] >= this->registers[reg2];
+
         this->registers[reg1] = this->registers[reg1] - this->registers[reg2];
 
-        if (this->registers[reg1] > this->registers[reg2]) {
+        if (flag) {
             this->registers[15] = 1;
         } else {
             this->registers[15] = 0;
@@ -153,10 +157,11 @@ void CPU::step() {
         // Apparently most implementations ignore Vy in this instruction
         // The original set Vx = Vy before the shift
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
+        uint8_t flag = this->registers[reg1] & 0x01;
 
         this->registers[reg1] = this->registers[reg1] >> 1;
 
-        this->registers[15] = this->registers[reg1] & 0x01;
+        this->registers[15] = flag;
     } else if ((instruction & 0xF00F) == 0x8007) {
         // SUBN Vx, Vy - Set Vx = Vy - Vx; Set Vf if Vy > Vx
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
@@ -175,10 +180,11 @@ void CPU::step() {
         // Apparently most implementations ignore Vy in this instruction
         // The original set Vx = Vy before the shift
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
+        uint8_t flag = (this->registers[reg1] & 0x80) >> 7;
 
         this->registers[reg1] = this->registers[reg1] << 1;
 
-        this->registers[15] = (this->registers[reg1] & 0x80) >> 7;
+        this->registers[15] = flag;
     } else if ((instruction & 0xF00F) == 0x9000) {
         // SNE Vx, Vy - Skip next instruction if Vx != Vy
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
