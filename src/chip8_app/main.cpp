@@ -3,11 +3,13 @@
 #include <ios>
 #include <iosfwd>
 #include <iostream>
+#include <mutex>
 
 #define SDL_MAIN_USE_CALLBACKS 1
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
+#include <SDL3/SDL_thread.h>
 
 #include "cpu.h"
 
@@ -85,6 +87,20 @@ void test(AppState *state) {
     state->cpu->load_code(code, sizeof(code));
 }
 
+int cpu_thread(void *appstate) {
+    AppState *state = (AppState *)appstate;
+
+    while (true) {
+        if (state->running) {
+            state->cpu->step();
+
+            // 1ms gives us somewhere between 500 and 1000 Hz clock frequency (depending on the time actually waited)
+            SDL_Delay(1);
+        }
+    }
+    return 0;
+}
+
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     AppState *state = new AppState();
     state->cpu = new CPU();
@@ -108,6 +124,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
 
     std::srand(std::time(NULL));
+
+    SDL_CreateThread(cpu_thread, "CPU Thread", (void *)state);
 
     return SDL_APP_CONTINUE;
 }
@@ -143,24 +161,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppIterate(void *appstate) {
-    AppState *state = (AppState *)appstate;
-    static bool FIRST_RUN = true;
-
-    if (!state->running) {
-        return SDL_APP_CONTINUE;
-    }
-
-    if (FIRST_RUN) {
-        // test(state);
-
-        FIRST_RUN = false;
-    }
-
-    state->cpu->step();
-
-    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(state->renderer);
+SDL_AppResult draw_frame(AppState *state) {
+    std::lock_guard<std::mutex> lock(state->cpu->display->lock);
 
     auto vram = state->cpu->display->vram;
 
@@ -194,6 +196,31 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
             SDL_RenderFillRect(state->renderer, &rect);
         }
+    }
+
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppIterate(void *appstate) {
+    AppState *state = (AppState *)appstate;
+    static bool FIRST_RUN = true;
+
+    if (!state->running) {
+        return SDL_APP_CONTINUE;
+    }
+
+    if (FIRST_RUN) {
+        // test(state);
+
+        FIRST_RUN = false;
+    }
+
+    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
+    SDL_RenderClear(state->renderer);
+
+    SDL_AppResult result = draw_frame(state);
+    if (result != SDL_APP_CONTINUE) {
+        return result;
     }
 
     SDL_RenderPresent(state->renderer);

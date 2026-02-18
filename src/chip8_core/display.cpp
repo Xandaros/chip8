@@ -1,10 +1,13 @@
 #include "display.h"
+#include <mutex>
 
 void Display::clear() {
     this->vram.fill(0);
 }
 
 void Display::draw_byte(int x, int y, uint8_t data) {
+    std::lock_guard<std::mutex> lock(this->lock);
+
     for (int bit = 0; bit < 8; ++bit) {
         int vram_x = (x + bit) % Display::WIDTH;
 
