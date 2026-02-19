@@ -182,14 +182,15 @@ void CPU::step() {
             this->registers[15] = 0;
         }
     } else if ((instruction & 0xF00F) == 0x8006) {
-        // SHR Vx{, Vy} - Set Vx = Vx >> 1; Set Vf to least significant bit of Vx
+        // SHR Vx{, Vy} - Set Vx = Vy >> 1; Set Vf to least significant bit of Vy
 
         // Apparently most implementations ignore Vy in this instruction
         // The original set Vx = Vy before the shift
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
-        uint8_t flag = this->registers[reg1] & 0x01;
+        uint8_t reg2 = (instruction & 0x00F0) >> 4;
+        uint8_t flag = this->registers[reg2] & 0x01;
 
-        this->registers[reg1] = this->registers[reg1] >> 1;
+        this->registers[reg1] = this->registers[reg2] >> 1;
 
         this->registers[15] = flag;
     } else if ((instruction & 0xF00F) == 0x8007) {
@@ -205,14 +206,15 @@ void CPU::step() {
             this->registers[15] = 0;
         }
     } else if ((instruction & 0xF00F) == 0x800E) {
-        // SHL Vx{, Vy} - Set Vx = Vx << 1; Set Vf to most significant bit of Vx
+        // SHL Vx{, Vy} - Set Vx = Vy << 1; Set Vf to most significant bit of Vy
 
         // Apparently most implementations ignore Vy in this instruction
         // The original set Vx = Vy before the shift
         uint8_t reg1 = (instruction & 0x0F00) >> 8;
-        uint8_t flag = (this->registers[reg1] & 0x80) >> 7;
+        uint8_t reg2 = (instruction & 0x00F0) >> 4;
+        uint8_t flag = (this->registers[reg2] & 0x80) >> 7;
 
-        this->registers[reg1] = this->registers[reg1] << 1;
+        this->registers[reg1] = this->registers[reg2] << 1;
 
         this->registers[15] = flag;
     } else if ((instruction & 0xF00F) == 0x9000) {
@@ -323,7 +325,7 @@ void CPU::step() {
         uint8_t max_reg = (instruction & 0x0F00) >> 8;
 
         for (int i = 0; i <= max_reg; ++i) {
-            this->memory[this->i + i] = this->registers[i];
+            this->memory[this->i++] = this->registers[i];
         }
     } else if ((instruction & 0xF0FF) == 0xF065) {
         // LD Vx, [I] - Load registers V0 through Vx from memory starting at address I
@@ -331,7 +333,7 @@ void CPU::step() {
         uint8_t max_reg = (instruction & 0x0F00) >> 8;
 
         for (int i = 0; i <= max_reg; ++i) {
-            this->registers[i] = this->memory[this->i + i];
+            this->registers[i] = this->memory[this->i++];
         }
     }
 
