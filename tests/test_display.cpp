@@ -7,7 +7,7 @@ TEST_CASE("Draw byte", "[display]") {
 
     display.clear();
     SECTION("Simple draw") {
-        display.draw_byte(0, 0, 0xFF);
+        bool flag = display.draw_byte(0, 0, 0xFF);
         CHECK(display.vram[0] == 1);
         CHECK(display.vram[1] == 1);
         CHECK(display.vram[2] == 1);
@@ -17,11 +17,13 @@ TEST_CASE("Draw byte", "[display]") {
         CHECK(display.vram[6] == 1);
         CHECK(display.vram[7] == 1);
         REQUIRE(display.vram[8] == 0);
+
+        REQUIRE(flag == false);
     }
 
     SECTION("Simple draw over existing data") {
         display.draw_byte(0, 0, 0xFF);
-        display.draw_byte(0, 0, 0xFF);
+        bool flag = display.draw_byte(0, 0, 0xFF);
         CHECK(display.vram[0] == 0);
         CHECK(display.vram[1] == 0);
         CHECK(display.vram[2] == 0);
@@ -31,6 +33,8 @@ TEST_CASE("Draw byte", "[display]") {
         CHECK(display.vram[6] == 0);
         CHECK(display.vram[7] == 0);
         REQUIRE(display.vram[8] == 0);
+
+        REQUIRE(flag == true);
     }
 
     SECTION("Simple draw at non-zero position") {
