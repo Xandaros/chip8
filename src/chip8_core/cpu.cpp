@@ -240,7 +240,7 @@ void CPU::step() {
 
         // Randomness slightly biased towards lower numbers due to the modulo
         // This is acceptable
-        this->pc = (std::rand() % 256) & mask;
+        this->registers[reg] = (std::rand() % 256) & mask;
     } else if ((instruction & 0xF000) == 0xD000) {
         // DRW Vx, Vy, n - Draw n bytes of sprite at I to x, y
         uint8_t x_reg = (instruction & 0x0F00) >> 8;
