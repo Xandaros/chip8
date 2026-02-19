@@ -17,7 +17,7 @@ bool Display::draw_byte(int x, int y, uint8_t data) {
         int old_val = this->vram[idx];
         int xor_val = (data >> (7 - bit)) & 0x01;
 
-        if (old_val == xor_val) {
+        if ((old_val & xor_val) == 1) {
             ret = true;
         }
 
