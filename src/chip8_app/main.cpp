@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <mutex>
+#include <string>
 
 #define SDL_MAIN_USE_CALLBACKS 1
 
@@ -28,6 +29,12 @@ struct AppState {
 
     /// Whether the program is exiting.
     bool exiting = false;
+};
+
+/// %Arguments passed on launch.
+struct Arguments {
+    /// Path of the ROM to load. May be NULL.
+    const char *rom_path = NULL;
 };
 
 /// Callback for SDL_ShowOpenFileDialog - loads the selected ROM into the CPU's
@@ -124,8 +131,26 @@ int timer_thread(void *appstate) {
     return 0;
 }
 
+/// Parse the given arguments into an Arguments struct
+Arguments parse_arguments(int argc, char **argv) {
+    Arguments ret;
+
+    // Skipping first argument = executable path
+    for (int i = 1; i < argc; ++i) {
+        std::string arg(argv[i]);
+
+        ret.rom_path = argv[i];
+    }
+
+    return ret;
+}
+
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
+    Arguments args = parse_arguments(argc, argv);
+
     AppState *state = new AppState();
+    *appstate = (void *)state;
+
     state->cpu = new CPU();
 
     std::srand(std::time(NULL));
@@ -159,10 +184,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     SDL_SetAudioStreamGain(state->audio, 0.1);
 
-    // Show file dialogue
-    *appstate = (void *)state;
+    if (args.rom_path != NULL) {
+        // Load from passed path
+        if (!state->cpu->load_code_from_file(args.rom_path)) {
+            SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Failed to load ROM from %s", args.rom_path);
+            return SDL_APP_FAILURE;
+        }
 
-    SDL_ShowOpenFileDialog(open_file, appstate, state->window, NULL, 0, NULL, false);
+        state->running = true;
+    } else {
+        // Show file dialogue
+        SDL_ShowOpenFileDialog(open_file, appstate, state->window, NULL, 0, NULL, false);
+    }
 
     // Create threads
     state->cpu_thread = SDL_CreateThread(cpu_thread, "CPU Thread", (void *)state);
