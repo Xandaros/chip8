@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include <cstdlib>
+#include <fstream>
 
 CPU::CPU() {
     this->pc = CPU::INITIAL_PC;
@@ -51,6 +52,24 @@ uint8_t CPU::pop() {
 
 void CPU::load_code(uint8_t *code, int length) {
     std::copy(code, code + length, this->memory.begin() + 0x200);
+}
+
+bool CPU::load_code_from_file(const char *path) {
+    std::ifstream stream;
+    stream.open(path, std::ios::in | std::ios::binary | std::ios::ate);
+
+    if (!stream.is_open()) {
+        return false;
+    }
+
+    std::streampos size = stream.tellg();
+    stream.seekg(0, std::ios::beg);
+
+    stream.read((char *)this->memory.data() + 0x200, size);
+
+    stream.close();
+
+    return true;
 }
 
 void CPU::step() {

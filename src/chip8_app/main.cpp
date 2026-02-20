@@ -1,8 +1,5 @@
+#include <cstdlib>
 #include <ctime>
-#include <fstream>
-#include <ios>
-#include <iosfwd>
-#include <iostream>
 #include <mutex>
 
 #define SDL_MAIN_USE_CALLBACKS 1
@@ -56,23 +53,7 @@ void open_file(void *appstate, const char * const *filelist, int filter) {
         return;
     }
 
-    std::ifstream stream;
-    stream.open(*file, std::ios::in | std::ios::binary | std::ios::ate);
-
-    if (!stream.is_open()) {
-        return;
-    }
-
-    std::streampos size = stream.tellg();
-    char *buffer = new char[size];
-    stream.seekg(0, std::ios::beg);
-
-    stream.read(buffer, size);
-
-    state->cpu->load_code((uint8_t *)buffer, size);
-
-    stream.close();
-    delete[] buffer;
+    state->cpu->load_code_from_file(*file);
 
     state->running = true;
 }

@@ -73,6 +73,13 @@ class CPU {
         /// \param length Length of the code to be loaded in bytes.
         void load_code(uint8_t *code, int length);
 
+        /// Load code into the CPU's memory.
+        ///
+        /// \param path Path to a file from which to load the code.
+        ///
+        /// \return Whether the load was successful.
+        bool load_code_from_file(const char *path);
+
         /// Execute the next instruction
         void step();
 
