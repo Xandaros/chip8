@@ -13,17 +13,33 @@
 
 #include "cpu.h"
 
+/// State to be kept between SDL callbacks.
 struct AppState {
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_AudioStream *audio;
     CPU *cpu;
+
+    /// Thread running the CPU.
     SDL_Thread *cpu_thread;
+
+    /// Thread ticking the timers.
     SDL_Thread *timer_thread;
+
+    /// Whether the CPU should run.
     bool running = false;
+
+    /// Whether the program is exiting.
     bool exiting = false;
 };
 
+/// Callback for SDL_ShowOpenFileDialog - loads the selected ROM into the CPU's
+/// memory and starts running it.
+///
+/// \param appstate A pointer to the AppState
+/// \param filelist A pointer to a NULL-terminated array of pointers, which
+/// point to strings of selected file paths.
+/// \param filter Which filter the user selected.
 void open_file(void *appstate, const char * const *filelist, int filter) {
     AppState *state = *(AppState **)appstate;
 
@@ -91,6 +107,7 @@ void test(AppState *state) {
     state->cpu->load_code(code, sizeof(code));
 }
 
+/// Steps the CPU at roughly 1000 Hz.
 int cpu_thread(void *appstate) {
     AppState *state = (AppState *)appstate;
 
@@ -108,6 +125,7 @@ int cpu_thread(void *appstate) {
     return 0;
 }
 
+/// Steps the timers at roughly 60 Hz.
 int timer_thread(void *appstate) {
     AppState *state = (AppState *)appstate;
 
@@ -244,8 +262,8 @@ SDL_AppResult draw_frame(AppState *state) {
 }
 
 /// Generate audio samples for the beep function
-/// @param stream Audio stream for which to generate samples
-/// @param current_sample Index of the next sample to be generated
+/// \param stream Audio stream for which to generate samples
+/// \param current_sample Index of the next sample to be generated
 void generate_audio(SDL_AudioStream *stream, int &current_sample) {
     const int MINIMUM_SAMPLES = 4096;
     if (SDL_GetAudioStreamQueued(stream) < MINIMUM_SAMPLES) {
