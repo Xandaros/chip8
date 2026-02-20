@@ -29,6 +29,9 @@ struct AppState {
 
     /// Whether the program is exiting.
     bool exiting = false;
+
+    /// When exiting because #exiting is set, whether to exit with an error.
+    int exit_error;
 };
 
 /// %Arguments passed on launch.
@@ -54,9 +57,11 @@ void open_file(void *appstate, const char * const *filelist, int filter) {
     }
 
     const char * const *file = filelist;
-    if (*file == NULL) {
+    if (*file == NULL || **file == '\0') {
         // No file selected
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "No ROM selected.");
+        SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "No ROM selected.");
+        state->exit_error = true;
+        state->exiting = true;
         return;
     }
 
@@ -298,6 +303,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     AppState *state = (AppState *)appstate;
     static bool FIRST_RUN = true;
     static int current_audio_sample = 0;
+
+    if (state->exiting) {
+        return state->exit_error ? SDL_APP_FAILURE : SDL_APP_SUCCESS;
+    }
 
     if (!state->running) {
         return SDL_APP_CONTINUE;
