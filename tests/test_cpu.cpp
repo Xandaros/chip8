@@ -2,7 +2,7 @@
 
 #include "cpu.h"
 
-void step_cpu(CPU *cpu, int num) {
+static void step_cpu(CPU *cpu, int num) {
     for (int i = 0; i < num; ++i) {
         cpu->step();
     }

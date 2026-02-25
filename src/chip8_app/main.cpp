@@ -47,7 +47,7 @@ struct Arguments {
 /// \param filelist A pointer to a NULL-terminated array of pointers, which
 /// point to strings of selected file paths.
 /// \param filter Which filter the user selected.
-void open_file(void *appstate, const char * const *filelist, int filter) {
+static void open_file(void *appstate, const char * const *filelist, int filter) {
     AppState *state = *(AppState **)appstate;
 
     if (filelist == NULL) {
@@ -70,7 +70,7 @@ void open_file(void *appstate, const char * const *filelist, int filter) {
     state->running = true;
 }
 
-void test(AppState *state) {
+static void test(AppState *state) {
     uint8_t code[] = {
         // Initialisation
         0x60, 0x00, // LD V0, 0
@@ -101,7 +101,7 @@ void test(AppState *state) {
 }
 
 /// Steps the CPU at roughly 1000 Hz.
-int cpu_thread(void *appstate) {
+static int cpu_thread(void *appstate) {
     AppState *state = (AppState *)appstate;
 
     while (true) {
@@ -119,7 +119,7 @@ int cpu_thread(void *appstate) {
 }
 
 /// Steps the timers at roughly 60 Hz.
-int timer_thread(void *appstate) {
+static int timer_thread(void *appstate) {
     AppState *state = (AppState *)appstate;
 
     while (true) {
@@ -137,7 +137,7 @@ int timer_thread(void *appstate) {
 }
 
 /// Parse the given arguments into an Arguments struct
-Arguments parse_arguments(int argc, char **argv) {
+static Arguments parse_arguments(int argc, char **argv) {
     Arguments ret;
 
     // Skipping first argument = executable path
@@ -283,7 +283,7 @@ SDL_AppResult draw_frame(AppState *state) {
 /// Generate audio samples for the beep function
 /// \param stream Audio stream for which to generate samples
 /// \param current_sample Index of the next sample to be generated
-void generate_audio(SDL_AudioStream *stream, int &current_sample) {
+static void generate_audio(SDL_AudioStream *stream, int &current_sample) {
     const int MINIMUM_SAMPLES = 4096;
     if (SDL_GetAudioStreamQueued(stream) < MINIMUM_SAMPLES) {
         float samples[MINIMUM_SAMPLES];
