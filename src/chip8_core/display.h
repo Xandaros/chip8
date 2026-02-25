@@ -10,10 +10,10 @@ class Display {
 
     public:
         /// Width of the display in pixels.
-        static const int WIDTH = 64;
+        static constexpr int WIDTH = 64;
 
         /// Height of the display in pixels.
-        static const int HEIGHT = 32;
+        static constexpr int HEIGHT = 32;
 
         /// A mutex lock for [vram](#vram).
         mutable std::mutex lock;

@@ -115,8 +115,8 @@ class CPU {
         bool is_key_down(uint8_t key);
 
         /// Initial value of the program counter.
-        static const uint16_t INITIAL_PC = 0x200;
+        static constexpr uint16_t INITIAL_PC = 0x200;
 
         /// Offset at which the font is loaded.
-        static const uint16_t FONT_OFFSET = 0;
+        static constexpr uint16_t FONT_OFFSET = 0;
 };

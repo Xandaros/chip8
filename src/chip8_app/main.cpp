@@ -284,12 +284,12 @@ SDL_AppResult draw_frame(AppState *state) {
 /// \param stream Audio stream for which to generate samples
 /// \param current_sample Index of the next sample to be generated
 static void generate_audio(SDL_AudioStream *stream, int &current_sample) {
-    const int MINIMUM_SAMPLES = 4096;
+    constexpr int MINIMUM_SAMPLES = 4096;
     if (SDL_GetAudioStreamQueued(stream) < MINIMUM_SAMPLES) {
         float samples[MINIMUM_SAMPLES];
 
         for (int i = 0; i < MINIMUM_SAMPLES; ++i) {
-            const int freq = 440;
+            constexpr int freq = 440;
             const float phase = current_sample * freq / 8000.0f;
             samples[i] = SDL_sinf(phase * 2 * SDL_PI_F);
             current_sample = (current_sample + 1) % 8000;
