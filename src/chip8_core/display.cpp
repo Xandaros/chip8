@@ -1,6 +1,19 @@
 #include "display.h"
 #include <mutex>
 
+Display::Display(const Display &other) {
+    std::lock_guard<std::mutex> lock(other.lock);
+
+    std::copy(other.vram.begin(), other.vram.end(), this->vram.begin());
+}
+
+Display& Display::operator=(Display other) {
+    std::lock_guard<std::mutex> lock(this->lock);
+
+    std::swap(this->vram, other.vram);
+    return *this;
+}
+
 void Display::clear() {
     this->vram.fill(0);
 }

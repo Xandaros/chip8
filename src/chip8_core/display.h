@@ -16,7 +16,7 @@ class Display {
         static const int HEIGHT = 32;
 
         /// A mutex lock for [vram](#vram).
-        std::mutex lock;
+        mutable std::mutex lock;
 
         /// Video memory as an array of bytes.
         ///
@@ -25,6 +25,10 @@ class Display {
         ///
         /// \important Acquire the [lock](#lock) before accessing this field!
         std::array<uint8_t, 64 * 32> vram;
+
+        Display() = default;
+        Display(const Display &other);
+        Display& operator=(Display other);
 
         /// Clear the screen.
         void clear();

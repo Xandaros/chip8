@@ -66,6 +66,9 @@ class CPU {
 
         CPU();
         ~CPU();
+        CPU(const CPU &other);
+
+        CPU& operator=(CPU other);
 
         /// Load code into the CPU's memory.
         ///

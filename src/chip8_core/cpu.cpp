@@ -1,5 +1,6 @@
 #include "cpu.h"
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 
 CPU::CPU() {
@@ -13,6 +14,25 @@ CPU::CPU() {
 
 CPU::~CPU() {
     delete this->display;
+}
+
+CPU::CPU(const CPU &other) : pc(other.pc), sp(other.sp), i(other.i), dt(other.dt.load()), st(other.st.load()) {
+    this->display = new Display(*other.display);
+    this->memory = other.memory;
+    std::memcpy(this->registers, other.registers, sizeof(other.registers));
+}
+
+CPU& CPU::operator=(CPU other) {
+    std::swap(this->display, other.display);
+    std::swap(this->memory, other.memory);
+    std::swap(this->registers, other.registers);
+    std::swap(this->pc, other.pc);
+    std::swap(this->sp, other.sp);
+    std::swap(this->i, other.i);
+    this->dt = other.dt.load();
+    this->st = other.st.load();
+
+    return *this;
 }
 
 void CPU::tick_timers() {
