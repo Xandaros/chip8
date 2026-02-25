@@ -7,17 +7,13 @@ CPU::CPU() {
     this->pc = CPU::INITIAL_PC;
     this->sp = 0;
 
-    this->display = new Display();
+    this->display = std::make_unique<Display>();
 
     std::copy(CPU::FONT.begin(), CPU::FONT.end(), this->memory.begin() + CPU::FONT_OFFSET);
 }
 
-CPU::~CPU() {
-    delete this->display;
-}
-
 CPU::CPU(const CPU &other) : pc(other.pc), sp(other.sp), i(other.i), dt(other.dt.load()), st(other.st.load()) {
-    this->display = new Display(*other.display);
+    this->display = std::make_unique<Display>(*other.display);
     this->memory = other.memory;
     std::memcpy(this->registers, other.registers, sizeof(other.registers));
 }

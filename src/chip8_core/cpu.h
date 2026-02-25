@@ -4,6 +4,7 @@
 
 #include<array>
 #include <atomic>
+#include <memory>
 #include <stdint.h>
 
 /// Main CHIP-8 implementation.
@@ -41,7 +42,7 @@ class CPU {
         };
 
         /// Display containing the video memory.
-        Display *display;
+        std::unique_ptr<Display> display;
 
         /// Internal memory, visible to the running ROM.
         std::array<uint8_t, 4096> memory;
@@ -65,7 +66,6 @@ class CPU {
         std::atomic<uint8_t> st;
 
         CPU();
-        ~CPU();
         CPU(const CPU &other);
 
         CPU& operator=(CPU other);
