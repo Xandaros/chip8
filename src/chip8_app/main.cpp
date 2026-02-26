@@ -241,9 +241,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 }
 
 SDL_AppResult draw_frame(AppState *state) {
-    std::lock_guard<std::mutex> lock(state->cpu->display->lock);
-
-    auto vram = state->cpu->display->vram;
+    auto vram = state->cpu->get_display().get_vram();
 
     int window_w, window_h;
 
@@ -321,7 +319,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     generate_audio(state->audio, current_audio_sample);
 
     // Play audio if ST > 0
-    if (state->cpu->st > 0) {
+    if (state->cpu->is_sound_playing()) {
         SDL_ResumeAudioStreamDevice(state->audio);
     } else {
         SDL_PauseAudioStreamDevice(state->audio);

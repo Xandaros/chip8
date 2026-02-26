@@ -7,17 +7,6 @@
 /// Video memory for the CHIP-8 emulator.
 class Display {
     private:
-
-    public:
-        /// Width of the display in pixels.
-        static constexpr int WIDTH = 64;
-
-        /// Height of the display in pixels.
-        static constexpr int HEIGHT = 32;
-
-        /// A mutex lock for [vram](#vram).
-        mutable std::mutex lock;
-
         /// Video memory as an array of bytes.
         ///
         /// Each entry should either be 1 for a lit pixel, or 0 for an unlit one.
@@ -25,6 +14,17 @@ class Display {
         ///
         /// \important Acquire the [lock](#lock) before accessing this field!
         std::array<uint8_t, 64 * 32> vram;
+
+        /// A mutex lock for [vram](#vram).
+        mutable std::mutex lock;
+
+
+    public:
+        /// Width of the display in pixels.
+        static constexpr int WIDTH = 64;
+
+        /// Height of the display in pixels.
+        static constexpr int HEIGHT = 32;
 
         Display() = default;
         Display(const Display &other);
@@ -44,4 +44,9 @@ class Display {
         /// \return A boolean indicating whether any bits were unset by this
         /// operation. Commonly used for collision detection.
         bool draw_byte(int x, int y, uint8_t data);
+
+        /// Get a copy of the current vram.
+        ///
+        /// \return A copt of the current vram.
+        std::array<uint8_t, Display::WIDTH * Display::HEIGHT> get_vram() const;
 };

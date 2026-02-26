@@ -38,11 +38,13 @@ TEST_CASE("Load register", "[cpu]") {
     cpu.load_code(code, sizeof(code));
     step_cpu(&cpu, 5);
 
-    CHECK(cpu.registers[0] == 0xDE);
-    CHECK(cpu.registers[1] == 0xAD);
-    CHECK(cpu.registers[2] == 0xBE);
-    CHECK(cpu.registers[3] == 0xEF);
-    REQUIRE(cpu.registers[15] == 0x79);
+    auto registers = cpu.get_registers();
+
+    CHECK(registers[0] == 0xDE);
+    CHECK(registers[1] == 0xAD);
+    CHECK(registers[2] == 0xBE);
+    CHECK(registers[3] == 0xEF);
+    REQUIRE(registers[15] == 0x79);
 }
 
 TEST_CASE("Call and return", "[cpu]") {
@@ -60,15 +62,15 @@ TEST_CASE("Call and return", "[cpu]") {
     cpu.load_code(code, sizeof(code));
 
     cpu.step();
-    REQUIRE(cpu.registers[0] == 0x34);
+    REQUIRE(cpu.get_register(0) == 0x34);
     cpu.step();
-    REQUIRE(cpu.pc == 0x0208);
+    REQUIRE(cpu.get_pc() == 0x0208);
     cpu.step();
-    REQUIRE(cpu.registers[0] == 0x36);
+    REQUIRE(cpu.get_register(0) == 0x36);
     cpu.step();
-    REQUIRE(cpu.pc == 0x0204);
+    REQUIRE(cpu.get_pc() == 0x0204);
     cpu.step();
-    REQUIRE(cpu.registers[0] == 0x35);
+    REQUIRE(cpu.get_register(0) == 0x35);
 }
 
 TEST_CASE("Add immediate", "[cpu]") {
@@ -82,11 +84,11 @@ TEST_CASE("Add immediate", "[cpu]") {
 
     cpu.load_code(code, sizeof(code));
     cpu.step();
-    CHECK(cpu.registers[0] == 0);
+    CHECK(cpu.get_register(0) == 0);
     cpu.step();
-    CHECK(cpu.registers[0] == 0x12);
+    CHECK(cpu.get_register(0) == 0x12);
     cpu.step();
-    REQUIRE(cpu.registers[0] == 0x24);
+    REQUIRE(cpu.get_register(0) == 0x24);
 }
 
 TEST_CASE("ADD I, Vx", "[cpu]") {
@@ -102,11 +104,11 @@ TEST_CASE("ADD I, Vx", "[cpu]") {
     cpu.load_code(code, sizeof(code));
     cpu.step();
     cpu.step();
-    CHECK(cpu.i == 0x123);
+    CHECK(cpu.get_i() == 0x123);
     cpu.step();
-    CHECK(cpu.i == 0x135);
+    CHECK(cpu.get_i() == 0x135);
     cpu.step();
-    REQUIRE(cpu.i == 0x147);
+    REQUIRE(cpu.get_i() == 0x147);
 }
 
 TEST_CASE("SE Vx, immediate", "[cpu]") {
@@ -123,16 +125,16 @@ TEST_CASE("SE Vx, immediate", "[cpu]") {
     cpu.load_code(code, sizeof(code));
 
     step_cpu(&cpu, 2);
-    CHECK(cpu.pc == 0x206);
-    CHECK(cpu.registers[0] == 0);
+    CHECK(cpu.get_pc() == 0x206);
+    CHECK(cpu.get_register(0) == 0);
 
     cpu.step();
-    CHECK(cpu.pc == 0x208);
-    CHECK(cpu.registers[0] == 0);
+    CHECK(cpu.get_pc() == 0x208);
+    CHECK(cpu.get_register(0) == 0);
 
     cpu.step();
-    CHECK(cpu.pc == 0x20A);
-    CHECK(cpu.registers[0] == 0x12);
+    CHECK(cpu.get_pc() == 0x20A);
+    CHECK(cpu.get_register(0) == 0x12);
 }
 
 TEST_CASE("SNE Vx, immediate", "[cpu]") {
@@ -149,16 +151,16 @@ TEST_CASE("SNE Vx, immediate", "[cpu]") {
     cpu.load_code(code, sizeof(code));
 
     step_cpu(&cpu, 2);
-    CHECK(cpu.pc == 0x206);
-    CHECK(cpu.registers[0] == 0);
+    CHECK(cpu.get_pc() == 0x206);
+    CHECK(cpu.get_register(0) == 0);
 
     cpu.step();
-    CHECK(cpu.pc == 0x208);
-    CHECK(cpu.registers[0] == 0);
+    CHECK(cpu.get_pc() == 0x208);
+    CHECK(cpu.get_register(0) == 0);
 
     cpu.step();
-    CHECK(cpu.pc == 0x20A);
-    CHECK(cpu.registers[0] == 0x12);
+    CHECK(cpu.get_pc() == 0x20A);
+    CHECK(cpu.get_register(0) == 0x12);
 }
 
 TEST_CASE("SE Vx, Vy", "[cpu]") {
@@ -177,16 +179,16 @@ TEST_CASE("SE Vx, Vy", "[cpu]") {
     cpu.load_code(code, sizeof(code));
 
     step_cpu(&cpu, 3);
-    CHECK(cpu.pc == 0x208);
-    CHECK(cpu.registers[0] == 0);
+    CHECK(cpu.get_pc() == 0x208);
+    CHECK(cpu.get_register(0) == 0);
 
     cpu.step();
-    CHECK(cpu.pc == 0x20A);
-    CHECK(cpu.registers[0] == 0x13);
+    CHECK(cpu.get_pc() == 0x20A);
+    CHECK(cpu.get_register(0) == 0x13);
 
     cpu.step();
-    CHECK(cpu.pc == 0x20C);
-    CHECK(cpu.registers[0] == 0x13);
+    CHECK(cpu.get_pc() == 0x20C);
+    CHECK(cpu.get_register(0) == 0x13);
 }
 
 TEST_CASE("LD B, Vx", "[cpu]") {
@@ -202,11 +204,11 @@ TEST_CASE("LD B, Vx", "[cpu]") {
 
     step_cpu(&cpu, 3);
 
-    REQUIRE(cpu.i == 0x300);
+    REQUIRE(cpu.get_i() == 0x300);
 
-    CHECK(cpu.memory[0x300] == 1);
-    CHECK(cpu.memory[0x301] == 2);
-    REQUIRE(cpu.memory[0x302] == 3);
+    CHECK(cpu.read_memory(0x300) == 1);
+    CHECK(cpu.read_memory(0x301) == 2);
+    REQUIRE(cpu.read_memory(0x302) == 3);
 }
 
 TEST_CASE("Sprite drawing", "[cpu][display]") {
@@ -221,6 +223,8 @@ TEST_CASE("Sprite drawing", "[cpu][display]") {
     cpu.load_code(code, sizeof(code));
     step_cpu(&cpu, 3);
 
+    auto vram = cpu.get_display().get_vram();
+
     for (int y = 0; y < 5; ++y) {
         for (int x = 0; x < 8; ++x) {
             uint8_t byte = CPU::FONT[y];
@@ -229,7 +233,7 @@ TEST_CASE("Sprite drawing", "[cpu][display]") {
             INFO("x: " << x);
             INFO("y: " << y);
             INFO("idx: " << idx);
-            CHECK(cpu.display->vram[idx] == ((byte >> (7 - x)) & 0x01));
+            CHECK(vram[idx] == ((byte >> (7 - x)) & 0x01));
         }
     }
 }

@@ -52,7 +52,7 @@ void CPU::set_key_down(uint8_t key, bool down) {
     }
 }
 
-bool CPU::is_key_down(uint8_t key) {
+bool CPU::is_key_down(uint8_t key) const {
     return this->keys[key & 0x0F];
 }
 
@@ -66,7 +66,7 @@ uint8_t CPU::pop() {
     return this->memory[0x1FF - this->sp];
 }
 
-void CPU::load_code(uint8_t *code, int length) {
+void CPU::load_code(const uint8_t *code, int length) {
     std::copy(code, code + length, this->memory.begin() + 0x200);
 }
 
@@ -86,6 +86,41 @@ bool CPU::load_code_from_file(const char *path) {
     stream.close();
 
     return true;
+}
+
+const Display& CPU::get_display() const {
+    return *this->display;
+}
+
+uint8_t CPU::read_memory(uint16_t addr) const {
+    return this->memory[addr & 0x0FFF];
+}
+
+std::array<uint8_t, 16> CPU::get_registers() const {
+    std::array<uint8_t, 16> ret;
+    std::copy(std::begin(this->registers), std::end(this->registers), ret.begin());
+
+    return ret;
+}
+
+uint8_t CPU::get_register(uint8_t reg) const {
+    return this->registers[reg & 0x0F];
+}
+
+uint16_t CPU::get_pc() const {
+    return this->pc;
+}
+
+uint8_t CPU::get_sp() const {
+    return this->sp;
+}
+
+uint16_t CPU::get_i() const {
+    return this->i;
+}
+
+bool CPU::is_sound_playing() const {
+    return this->st > 0;
 }
 
 void CPU::step() {

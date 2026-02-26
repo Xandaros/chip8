@@ -39,3 +39,9 @@ bool Display::draw_byte(int x, int y, uint8_t data) {
 
     return ret;
 }
+
+std::array<uint8_t, Display::WIDTH * Display::HEIGHT> Display::get_vram() const {
+    std::lock_guard<std::mutex> lock(this->lock);
+
+    return this->vram;
+}
