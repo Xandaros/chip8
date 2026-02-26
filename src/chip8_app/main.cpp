@@ -1,6 +1,5 @@
 #include <cstdlib>
 #include <ctime>
-#include <mutex>
 #include <string>
 
 #define SDL_MAIN_USE_CALLBACKS 1
@@ -16,13 +15,14 @@ struct AppState {
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_AudioStream *audio;
-    CPU *cpu;
 
     /// Thread running the CPU.
     SDL_Thread *cpu_thread;
 
     /// Thread ticking the timers.
     SDL_Thread *timer_thread;
+
+    CPU cpu;
 
     /// Whether the CPU should run.
     bool running = false;
@@ -65,7 +65,7 @@ static void open_file(void *appstate, const char * const *filelist, int filter) 
         return;
     }
 
-    state->cpu->load_code_from_file(*file);
+    state->cpu.load_code_from_file(*file);
 
     state->running = true;
 }
@@ -97,7 +97,7 @@ static void test(AppState *state) {
         0x12, 0x20, // JP end
     };
 
-    state->cpu->load_code(code, sizeof(code));
+    state->cpu.load_code(code, sizeof(code));
 }
 
 /// Steps the CPU at roughly 1000 Hz.
@@ -109,7 +109,7 @@ static int cpu_thread(void *appstate) {
             break;
         }
         if (state->running) {
-            state->cpu->step();
+            state->cpu.step();
 
             // 1ms gives us somewhere between 500 and 1000 Hz clock frequency (depending on the time actually waited)
             SDL_Delay(1);
@@ -127,7 +127,7 @@ static int timer_thread(void *appstate) {
             break;
         }
         if (state->running) {
-            state->cpu->tick_timers();
+            state->cpu.tick_timers();
 
             // Timers should run at 60 Hz
             SDL_Delay(1000 / 60);
@@ -155,8 +155,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     AppState *state = new AppState();
     *appstate = (void *)state;
-
-    state->cpu = new CPU();
 
     std::srand(std::time(NULL));
 
@@ -191,7 +189,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     if (args.rom_path != NULL) {
         // Load from passed path
-        if (!state->cpu->load_code_from_file(args.rom_path)) {
+        if (!state->cpu.load_code_from_file(args.rom_path)) {
             SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Failed to load ROM from %s", args.rom_path);
             return SDL_APP_FAILURE;
         }
@@ -234,14 +232,14 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
             return SDL_APP_CONTINUE;
         }
 
-        state->cpu->set_key_down(key, event->key.down);
+        state->cpu.set_key_down(key, event->key.down);
     }
 
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult draw_frame(AppState *state) {
-    auto vram = state->cpu->get_display().get_vram();
+    auto vram = state->cpu.get_display().get_vram();
 
     int window_w, window_h;
 
@@ -319,7 +317,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     generate_audio(state->audio, current_audio_sample);
 
     // Play audio if ST > 0
-    if (state->cpu->is_sound_playing()) {
+    if (state->cpu.is_sound_playing()) {
         SDL_ResumeAudioStreamDevice(state->audio);
     } else {
         SDL_PauseAudioStreamDevice(state->audio);
@@ -345,6 +343,5 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     SDL_WaitThread(state->cpu_thread, NULL);
     SDL_WaitThread(state->timer_thread, NULL);
 
-    delete state->cpu;
     delete state;
 }
