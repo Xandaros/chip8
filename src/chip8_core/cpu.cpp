@@ -3,24 +3,25 @@
 #include <cstring>
 #include <fstream>
 
-CPU::CPU() {
-    this->pc = CPU::INITIAL_PC;
-    this->sp = 0;
-
-    this->display = std::make_unique<Display>();
-
+CPU::CPU()
+    : display(std::make_unique<Display>()) {
+    // Copy font data into the CPU's memory
     std::copy(CPU::FONT.begin(), CPU::FONT.end(), this->memory.begin() + CPU::FONT_OFFSET);
 }
 
-CPU::CPU(const CPU &other) : pc(other.pc), sp(other.sp), i(other.i), dt(other.dt.load()), st(other.st.load()) {
+CPU::CPU(const CPU &other)
+    : key_wait_register(other.key_wait_register), pc(other.pc), sp(other.sp), i(other.i), dt(other.dt.load()), st(other.st.load()) {
     this->display = std::make_unique<Display>(*other.display);
     this->memory = other.memory;
+    std::memcpy(this->keys, other.keys, sizeof(other.keys));
     std::memcpy(this->registers, other.registers, sizeof(other.registers));
 }
 
 CPU& CPU::operator=(CPU other) {
     std::swap(this->display, other.display);
     std::swap(this->memory, other.memory);
+    std::swap(this->keys, other.keys);
+    std::swap(this->key_wait_register, other.key_wait_register);
     std::swap(this->registers, other.registers);
     std::swap(this->pc, other.pc);
     std::swap(this->sp, other.sp);

@@ -20,6 +20,7 @@ class CPU {
 
         /// Array of keys, indicating whether the corresponding key is pressed.
         bool keys[16];
+
         /// When waiting for a key, this attribute indicates which register the pressed key should be written to.
         /// \note Using 0xFF as a special "not waiting" value
         uint8_t key_wait_register = 0xFF;
@@ -28,19 +29,19 @@ class CPU {
         uint8_t registers[16];
 
         /// Program counter.
-        uint16_t pc;
+        uint16_t pc = CPU::INITIAL_PC;
 
         /// Stack pointer.
-        uint8_t sp;
+        uint8_t sp = 0;
 
         /// Index register.
-        uint16_t i;
+        uint16_t i = 0;
 
         /// Delay timer register.
-        std::atomic<uint8_t> dt;
+        std::atomic<uint8_t> dt = 0;
 
         /// Sound timer register.
-        std::atomic<uint8_t> st;
+        std::atomic<uint8_t> st = 0;
 
     public:
         /// Static font data.
