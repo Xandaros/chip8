@@ -4,7 +4,6 @@
 
 #include<array>
 #include <atomic>
-#include <memory>
 #include <stdint.h>
 
 /// Main CHIP-8 implementation.
@@ -13,7 +12,7 @@
 class CPU {
     private:
         /// Display containing the video memory.
-        std::unique_ptr<Display> display;
+        Display display;
 
         /// Internal memory, visible to the running ROM.
         std::array<uint8_t, 4096> memory;

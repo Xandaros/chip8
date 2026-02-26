@@ -3,15 +3,14 @@
 #include <cstring>
 #include <fstream>
 
-CPU::CPU()
-    : display(std::make_unique<Display>()) {
+CPU::CPU() {
     // Copy font data into the CPU's memory
     std::copy(CPU::FONT.begin(), CPU::FONT.end(), this->memory.begin() + CPU::FONT_OFFSET);
 }
 
 CPU::CPU(const CPU &other)
     : key_wait_register(other.key_wait_register), pc(other.pc), sp(other.sp), i(other.i), dt(other.dt.load()), st(other.st.load()) {
-    this->display = std::make_unique<Display>(*other.display);
+    this->display = other.display;
     this->memory = other.memory;
     std::memcpy(this->keys, other.keys, sizeof(other.keys));
     std::memcpy(this->registers, other.registers, sizeof(other.registers));
@@ -90,7 +89,7 @@ bool CPU::load_code_from_file(const char *path) {
 }
 
 const Display& CPU::get_display() const {
-    return *this->display;
+    return this->display;
 }
 
 uint8_t CPU::read_memory(uint16_t addr) const {
@@ -135,7 +134,7 @@ void CPU::step() {
 
     if (instruction == 0x00E0) {
         // CLS - clear screen
-        this->display->clear();
+        this->display.clear();
     } else if (instruction == 0x00EE) {
         // RET - return from subroutine
         uint16_t addr = this->pop();
@@ -327,7 +326,7 @@ void CPU::step() {
 
         for (int i = 0; i < n; ++i) {
             uint8_t data = this->memory[this->i + i];
-            if (this->display->draw_byte(x, (y + i) % Display::HEIGHT, data)) {
+            if (this->display.draw_byte(x, (y + i) % Display::HEIGHT, data)) {
                 flag = true;
             }
         }
