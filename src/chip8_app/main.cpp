@@ -36,8 +36,8 @@ struct AppState {
 
 /// %Arguments passed on launch.
 struct Arguments {
-    /// Path of the ROM to load. May be NULL.
-    const char *rom_path = NULL;
+    /// Path of the ROM to load. May be nullptr.
+    const char *rom_path = nullptr;
 };
 
 /// Callback for SDL_ShowOpenFileDialog - loads the selected ROM into the CPU's
@@ -50,14 +50,14 @@ struct Arguments {
 static void open_file(void *appstate, const char * const *filelist, int filter) {
     AppState *state = *(AppState **)appstate;
 
-    if (filelist == NULL) {
+    if (filelist == nullptr) {
         // filelist being NULL indicates an error
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", SDL_GetError());
         return;
     }
 
     const char * const *file = filelist;
-    if (*file == NULL || **file == '\0') {
+    if (*file == nullptr || **file == '\0') {
         // No file selected
         SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "No ROM selected.");
         state->exit_error = true;
@@ -156,7 +156,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     AppState *state = new AppState();
     *appstate = (void *)state;
 
-    std::srand(std::time(NULL));
+    std::srand(std::time(nullptr));
 
     // Initialise SDL
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -178,7 +178,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         .channels = 1,
         .freq = 8000,
     };
-    state->audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
+    state->audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
 
     if (!state->audio) {
         SDL_LogCritical(SDL_LOG_CATEGORY_AUDIO, "Failed to create audio stream: %s", SDL_GetError());
@@ -187,7 +187,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
 
     SDL_SetAudioStreamGain(state->audio, 0.1);
 
-    if (args.rom_path != NULL) {
+    if (args.rom_path != nullptr) {
         // Load from passed path
         if (!state->cpu.load_code_from_file(args.rom_path)) {
             SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "Failed to load ROM from %s", args.rom_path);
@@ -197,7 +197,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
         state->running = true;
     } else {
         // Show file dialogue
-        SDL_ShowOpenFileDialog(open_file, appstate, state->window, NULL, 0, NULL, false);
+        SDL_ShowOpenFileDialog(open_file, appstate, state->window, nullptr, 0, nullptr, false);
     }
 
     // Create threads
@@ -340,8 +340,8 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     state->running = false;
     state->exiting = true;
 
-    SDL_WaitThread(state->cpu_thread, NULL);
-    SDL_WaitThread(state->timer_thread, NULL);
+    SDL_WaitThread(state->cpu_thread, nullptr);
+    SDL_WaitThread(state->timer_thread, nullptr);
 
     delete state;
 }
