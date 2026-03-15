@@ -81,7 +81,7 @@ bool CPU::load_code_from_file(const char *path) {
     std::streampos size = stream.tellg();
     stream.seekg(0, std::ios::beg);
 
-    stream.read((char *)this->memory.data() + 0x200, size);
+    stream.read(reinterpret_cast<char *>(this->memory.data()) + 0x200, size);
 
     stream.close();
 
@@ -337,7 +337,7 @@ void CPU::step() {
         uint8_t reg = (instruction & 0x0F00) >> 8;
 
         uint8_t key = this->registers[reg] & 0x0F;
-        if (this->is_key_down(this->registers[reg] & 0x0F)) {
+        if (this->is_key_down(key)) {
             this->pc += 2;
         }
     } else if ((instruction & 0xF0FF) == 0xE0A1) {

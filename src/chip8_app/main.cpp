@@ -48,7 +48,7 @@ struct Arguments {
 /// point to strings of selected file paths.
 /// \param filter Which filter the user selected.
 static void open_file(void *appstate, const char * const *filelist, int filter) {
-    AppState *state = *(AppState **)appstate;
+    AppState *state = *static_cast<AppState **>(appstate);
 
     if (filelist == nullptr) {
         // filelist being NULL indicates an error
@@ -102,7 +102,7 @@ static void test(AppState *state) {
 
 /// Steps the CPU at roughly 1000 Hz.
 static int cpu_thread(void *appstate) {
-    AppState *state = (AppState *)appstate;
+    AppState *state = static_cast<AppState *>(appstate);
 
     while (true) {
         if (state->exiting) {
@@ -120,7 +120,7 @@ static int cpu_thread(void *appstate) {
 
 /// Steps the timers at roughly 60 Hz.
 static int timer_thread(void *appstate) {
-    AppState *state = (AppState *)appstate;
+    AppState *state = static_cast<AppState *>(appstate);
 
     while (true) {
         if (state->exiting) {
@@ -154,7 +154,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     Arguments args = parse_arguments(argc, argv);
 
     AppState *state = new AppState();
-    *appstate = (void *)state;
+    *appstate = static_cast<void *>(state);
 
     std::srand(std::time(nullptr));
 
@@ -201,14 +201,14 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
     }
 
     // Create threads
-    state->cpu_thread = SDL_CreateThread(cpu_thread, "CPU Thread", (void *)state);
-    state->timer_thread = SDL_CreateThread(timer_thread, "Timer Thread", (void *)state);
+    state->cpu_thread = SDL_CreateThread(cpu_thread, "CPU Thread", static_cast<void *>(state));
+    state->timer_thread = SDL_CreateThread(timer_thread, "Timer Thread", static_cast<void *>(state));
 
     return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
-    AppState *state = (AppState *)appstate;
+    AppState *state = static_cast<AppState *>(appstate);
 
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
@@ -249,8 +249,8 @@ SDL_AppResult draw_frame(AppState *state) {
         return SDL_APP_FAILURE;
     }
 
-    float pixel_w = (float)window_w / (float)Display::WIDTH;
-    float pixel_h = (float)window_h / (float)Display::HEIGHT;
+    float pixel_w = static_cast<float>(window_w) / static_cast<float>(Display::WIDTH);
+    float pixel_h = static_cast<float>(window_h) / static_cast<float>(Display::HEIGHT);
 
     for (int y = 0; y < Display::HEIGHT; ++y) {
         for (int x = 0; x < Display::WIDTH; ++x) {
@@ -296,7 +296,7 @@ static void generate_audio(SDL_AudioStream *stream, int &current_sample) {
 }
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
-    AppState *state = (AppState *)appstate;
+    AppState *state = static_cast<AppState *>(appstate);
     static bool FIRST_RUN = true;
     static int current_audio_sample = 0;
 
@@ -336,7 +336,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-    AppState *state = (AppState *)appstate;
+    AppState *state = static_cast<AppState *>(appstate);
     state->running = false;
     state->exiting = true;
 
