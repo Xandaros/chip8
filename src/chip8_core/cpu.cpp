@@ -79,9 +79,20 @@ bool CPU::load_code_from_file(const char *path) {
     }
 
     std::streampos size = stream.tellg();
+
+    if (size <= 0 || size > this->memory.size() - 0x200) {
+        // File too big, empty, or there was an error
+        return false;
+    }
+
     stream.seekg(0, std::ios::beg);
 
-    stream.read(reinterpret_cast<char *>(this->memory.data()) + 0x200, size);
+    stream.read(reinterpret_cast<char *>(this->memory.data() + 0x200), size);
+
+    if (!stream) {
+        // Error while reading file
+        return false;
+    }
 
     stream.close();
 
